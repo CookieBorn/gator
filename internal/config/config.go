@@ -1,9 +1,10 @@
 package config
 
-func working(x string) string {
+func Working(x string) string {
 	return x + "Works"
 }
 
-type strutConfig struct {
-	url string
+type Config struct {
+	DB_URL   string `json:"db_url"`
+	Username string `json:"current_user_name"`
 }
