@@ -8,5 +8,6 @@ import (
 
 func main() {
 	fmt.Print("Have Fun\n")
-	fmt.Print(config.Working("Config ") + "\n")
+	file, _ := config.Read()
+	file.SetUser("robert")
 }
