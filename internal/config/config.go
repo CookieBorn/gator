@@ -41,18 +41,25 @@ func Read() (Config, error) {
 	return config, nil
 }
 
-func (c *Config) SetUser(name string) {
+func (c *Config) SetUser(name string) error {
 	c.Username = name
 	file, err := os.Open(configFileName)
 	if err != nil {
 		fmt.Print("Open File Error\n")
+		return err
 	}
 	defer file.Close()
 	jsonData, err := json.Marshal(c)
 	if err != nil {
 		fmt.Print("Marshal Error\n")
+		return err
 	}
 	fmt.Printf("%s\n", string(jsonData))
 	var fileMode os.FileMode
 	err = os.WriteFile(configFileName, jsonData, fileMode)
+	if err != nil {
+		fmt.Print("Write Error\n")
+		return err
+	}
+	return nil
 }
