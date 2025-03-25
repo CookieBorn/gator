@@ -25,8 +25,8 @@ func Read() (Config, error) {
 		fmt.Print("File Location Errot\n")
 		return config, err
 	}
-	fileLocation = fileLocation + configFileName
-	jsonFile, err := os.Open(configFileName)
+	fileLocationcom := fileLocation + "/" + configFileName
+	jsonFile, err := os.Open(fileLocationcom)
 	if err != nil {
 		fmt.Print("File Open Error\n")
 		return config, err
@@ -43,7 +43,13 @@ func Read() (Config, error) {
 
 func (c *Config) SetUser(name string) error {
 	c.Username = name
-	file, err := os.Open(configFileName)
+	fileLocation, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Print("File Location Errot\n")
+		return err
+	}
+	fileLocationcom := fileLocation + "/" + configFileName
+	file, err := os.Open(fileLocationcom)
 	if err != nil {
 		fmt.Print("Open File Error\n")
 		return err
@@ -56,7 +62,7 @@ func (c *Config) SetUser(name string) error {
 	}
 	fmt.Printf("%s\n", string(jsonData))
 	var fileMode os.FileMode
-	err = os.WriteFile(configFileName, jsonData, fileMode)
+	err = os.WriteFile(fileLocationcom, jsonData, fileMode)
 	if err != nil {
 		fmt.Print("Write Error\n")
 		return err
