@@ -7,10 +7,6 @@ import (
 	"os"
 )
 
-func Working(x string) string {
-	return x + "Works"
-}
-
 type Config struct {
 	DB_URL   string `json:"db_url"`
 	Username string `json:"current_user_name"`
@@ -18,15 +14,20 @@ type Config struct {
 
 const configFileName = ".gatorconfig.json"
 
-func Read() (Config, error) {
-	var config Config
+func getFileLocation() string {
 	fileLocation, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Print("File Location Errot\n")
-		return config, err
+		fmt.Print("File Location Error\n")
+		return ""
 	}
 	fileLocationcom := fileLocation + "/" + configFileName
-	jsonFile, err := os.Open(fileLocationcom)
+	return fileLocationcom
+}
+
+func Read() (Config, error) {
+	var config Config
+	fileLocation := getFileLocation()
+	jsonFile, err := os.Open(fileLocation)
 	if err != nil {
 		fmt.Print("File Open Error\n")
 		return config, err
@@ -43,12 +44,7 @@ func Read() (Config, error) {
 
 func (c *Config) SetUser(name string) error {
 	c.Username = name
-	fileLocation, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Print("File Location Errot\n")
-		return err
-	}
-	fileLocationcom := fileLocation + "/" + configFileName
+	fileLocationcom := getFileLocation()
 	file, err := os.Open(fileLocationcom)
 	if err != nil {
 		fmt.Print("Open File Error\n")

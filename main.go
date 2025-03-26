@@ -3,16 +3,21 @@ package main
 import (
 	"fmt"
 	"os"
+	"sql"
 
 	"github.com/CookieBorn/gator/internal/config"
+	"github.com/CookieBorn/gator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	file, _ := config.Read()
 	pointFile := &file
-	stat := state{configStruct: pointFile}
 	com := innit()
 	com.register("login", handleLogin)
+	db, err := sql.Open("postgres", dbURL)
+	dbQueries := database.New(db)
+	stat := state{configStruct: pointFile, db: dbQueries}
 	args := os.Args
 	if len(args) < 2 {
 		fmt.Print("Missing arguments\n")
@@ -22,15 +27,18 @@ func main() {
 		name:      args[1],
 		arguments: args[2:],
 	}
-	err := com.run(&stat, cmd)
+	err = com.run(&stat, cmd)
 	if err != nil {
 		os.Exit(1)
 	}
 
 }
 
+const dbURL = "postgres://postgres:postgres@localhost:5432/gator"
+
 type state struct {
 	configStruct *config.Config
+	db           *database.Queries
 }
 
 type command struct {
