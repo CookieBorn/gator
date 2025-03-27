@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
-	"sql"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/CookieBorn/gator/internal/config"
 	"github.com/CookieBorn/gator/internal/database"
@@ -15,6 +19,7 @@ func main() {
 	pointFile := &file
 	com := innit()
 	com.register("login", handleLogin)
+	com.register("register", handleRegister)
 	db, err := sql.Open("postgres", dbURL)
 	dbQueries := database.New(db)
 	stat := state{configStruct: pointFile, db: dbQueries}
@@ -34,7 +39,7 @@ func main() {
 
 }
 
-const dbURL = "postgres://postgres:postgres@localhost:5432/gator"
+const dbURL = "postgres://postgres:postgres@localhost:5432/gator?sslmode=disable"
 
 type state struct {
 	configStruct *config.Config
@@ -69,7 +74,7 @@ func (c *commands) run(s *state, cmd command) error {
 	}
 	err := fun(s, cmd)
 	if err != nil {
-		fmt.Print("Run Error\n")
+		fmt.Printf("Run Error: %v\n", err)
 		return err
 	}
 	return nil
@@ -81,5 +86,27 @@ func handleLogin(s *state, cmd command) error {
 		return err
 	}
 	s.configStruct.SetUser(cmd.arguments[0])
+	return nil
+}
+
+func handleRegister(s *state, cmd command) error {
+	if len(cmd.arguments) != 1 {
+		err := fmt.Errorf("Register expecting one argument")
+		return err
+	}
+	usereParam := database.CreateUserParams{
+		ID:        int32(uuid.New().ID()),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      cmd.arguments[0],
+	}
+	_, err := s.db.CreateUser(context.Background(), usereParam)
+	if err != nil {
+		fmt.Printf("Creation error: %v\n", err)
+		return fmt.Errorf("User creation error")
+	}
+	s.configStruct.SetUser(cmd.arguments[0])
+	fmt.Print("User created succesfully\n")
+	fmt.Printf("ID:%v, CreatedAt:%s, UpdatedAt:%s, Name:%s\n", usereParam.ID, usereParam.CreatedAt, usereParam.UpdatedAt, usereParam.Name)
 	return nil
 }
