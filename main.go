@@ -20,6 +20,8 @@ func main() {
 	com := innit()
 	com.register("login", handleLogin)
 	com.register("register", handleRegister)
+	com.register("reset", handleReset)
+	com.register("users", handleUsers)
 	db, err := sql.Open("postgres", dbURL)
 	dbQueries := database.New(db)
 	stat := state{configStruct: pointFile, db: dbQueries}
@@ -85,6 +87,10 @@ func handleLogin(s *state, cmd command) error {
 		err := fmt.Errorf("Login expecting one argument")
 		return err
 	}
+	_, err := s.db.GetUserName(context.Background(), cmd.arguments[0])
+	if err != nil {
+		return fmt.Errorf("User does not exit: %v", err)
+	}
 	s.configStruct.SetUser(cmd.arguments[0])
 	return nil
 }
@@ -108,5 +114,28 @@ func handleRegister(s *state, cmd command) error {
 	s.configStruct.SetUser(cmd.arguments[0])
 	fmt.Print("User created succesfully\n")
 	fmt.Printf("ID:%v, CreatedAt:%s, UpdatedAt:%s, Name:%s\n", usereParam.ID, usereParam.CreatedAt, usereParam.UpdatedAt, usereParam.Name)
+	return nil
+}
+
+func handleReset(s *state, cmd command) error {
+	err := s.db.Reset(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleUsers(s *state, cmd command) error {
+	names, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		if name == s.configStruct.Username {
+			fmt.Printf(" - %s (current)\n", name)
+		} else {
+			fmt.Printf(" - %s\n", name)
+		}
+	}
 	return nil
 }

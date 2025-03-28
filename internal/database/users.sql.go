@@ -61,3 +61,56 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 	)
 	return i, err
 }
+
+const getUserName = `-- name: GetUserName :one
+SELECT id, created_at, updated_at, name from users
+where name=$1
+`
+
+func (q *Queries) GetUserName(ctx context.Context, name string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserName, name)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+	)
+	return i, err
+}
+
+const getUsers = `-- name: GetUsers :many
+SELECT name from users
+`
+
+func (q *Queries) GetUsers(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const reset = `-- name: Reset :exec
+DELETE from users
+`
+
+func (q *Queries) Reset(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, reset)
+	return err
+}
