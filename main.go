@@ -117,6 +117,7 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	client := http.Client{}
 	req.Header.Set("User-Agent", "gator-CB")
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return &rssFeed, err
 	}
@@ -135,4 +136,28 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 		html.UnescapeString(item.Description)
 	}
 	return &rssFeed, nil
+}
+
+func handleAddFeed(s *state, cmd command) error {
+	if len(cmd.arguments) < 2 {
+		return fmt.Errorf("Require 2 arguments url and name\n")
+	}
+	userId, err := s.db.GetUserId(context.Background(), s.configStruct.Username)
+	if err != nil {
+		return err
+	}
+	feedParam := database.CreateFeedParams{
+		ID:        int32(uuid.New().ID()),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      cmd.arguments[1],
+		Url:       cmd.arguments[0],
+		UserID:    userId,
+	}
+	_, errm := s.db.CreateFeed(context.Background(), feedParam)
+	if errm != nil {
+		return errm
+	}
+	fmt.Printf("%s\n", feedParam)
+	return nil
 }
