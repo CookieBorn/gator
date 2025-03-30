@@ -140,7 +140,7 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 
 func handleAddFeed(s *state, cmd command) error {
 	if len(cmd.arguments) < 2 {
-		return fmt.Errorf("Require 2 arguments url and name\n")
+		return fmt.Errorf("Require 2 arguments name and url\n")
 	}
 	userId, err := s.db.GetUserId(context.Background(), s.configStruct.Username)
 	if err != nil {
@@ -150,8 +150,8 @@ func handleAddFeed(s *state, cmd command) error {
 		ID:        int32(uuid.New().ID()),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Name:      cmd.arguments[1],
-		Url:       cmd.arguments[0],
+		Name:      cmd.arguments[0],
+		Url:       cmd.arguments[1],
 		UserID:    userId,
 	}
 	_, errm := s.db.CreateFeed(context.Background(), feedParam)
@@ -159,5 +159,23 @@ func handleAddFeed(s *state, cmd command) error {
 		return errm
 	}
 	fmt.Printf("%s\n", feedParam)
+	return nil
+}
+
+func handleFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return nil
+	}
+	for _, feed := range feeds {
+		User, err := s.db.GetUser(context.Background(), feed.UserID)
+		if err != nil {
+			return nil
+		}
+		fmt.Print("Feed:\n")
+		fmt.Printf("- Name: %s\n", feed.Name)
+		fmt.Printf("- URL: %s\n", feed.Url)
+		fmt.Printf("- Created by: %s\n", User.Name)
+	}
 	return nil
 }
