@@ -3,7 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/xml"
 	"fmt"
+	"html"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -18,10 +22,6 @@ func main() {
 	file, _ := config.Read()
 	pointFile := &file
 	com := innit()
-	com.register("login", handleLogin)
-	com.register("register", handleRegister)
-	com.register("reset", handleReset)
-	com.register("users", handleUsers)
 	db, err := sql.Open("postgres", dbURL)
 	dbQueries := database.New(db)
 	stat := state{configStruct: pointFile, db: dbQueries}
@@ -39,47 +39,6 @@ func main() {
 		os.Exit(1)
 	}
 
-}
-
-const dbURL = "postgres://postgres:postgres@localhost:5432/gator?sslmode=disable"
-
-type state struct {
-	configStruct *config.Config
-	db           *database.Queries
-}
-
-type command struct {
-	name      string
-	arguments []string
-}
-
-type commands struct {
-	comd map[string]func(*state, command) error
-}
-
-func innit() commands {
-	com := make(map[string]func(*state, command) error)
-	comm := commands{comd: com}
-	return comm
-}
-
-func (c *commands) register(name string, f func(*state, command) error) {
-	c.comd[name] = f
-}
-
-func (c *commands) run(s *state, cmd command) error {
-	fun, ok := c.comd[cmd.name]
-	if !ok {
-		fmt.Print("Command incorrect\n")
-		err := fmt.Errorf("Command incorrect %v", 1)
-		return err
-	}
-	err := fun(s, cmd)
-	if err != nil {
-		fmt.Printf("Run Error: %v\n", err)
-		return err
-	}
-	return nil
 }
 
 func handleLogin(s *state, cmd command) error {
@@ -138,4 +97,42 @@ func handleUsers(s *state, cmd command) error {
 		}
 	}
 	return nil
+}
+
+func handleAgg(s *state, cmd command) error {
+	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s\n", feed)
+	return nil
+}
+
+func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
+	var rssFeed RSSFeed
+	req, err := http.NewRequestWithContext(ctx, "GET", feedURL, nil)
+	if err != nil {
+		return &rssFeed, err
+	}
+	client := http.Client{}
+	req.Header.Set("User-Agent", "gator-CB")
+	resp, err := client.Do(req)
+	if err != nil {
+		return &rssFeed, err
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &rssFeed, err
+	}
+	err = xml.Unmarshal(body, &rssFeed)
+	if err != nil {
+		return &rssFeed, err
+	}
+	html.UnescapeString(rssFeed.Channel.Title)
+	html.UnescapeString(rssFeed.Channel.Description)
+	for _, item := range rssFeed.Channel.Item {
+		html.UnescapeString(item.Title)
+		html.UnescapeString(item.Description)
+	}
+	return &rssFeed, nil
 }
