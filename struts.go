@@ -33,6 +33,8 @@ func innit() commands {
 	comm.register("agg", handleAgg)
 	comm.register("addfeed", handleAddFeed)
 	comm.register("feeds", handleFeeds)
+	comm.register("following", handleFollowing)
+	comm.register("follow", handleFollow)
 	return comm
 }
 
