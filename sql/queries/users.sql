@@ -11,11 +11,11 @@ RETURNING *;
 
 -- name: GetUser :one
 SELECT * from users
-where id=$1;
+where name=$1;
 
 -- name: GetUserId :one
-SELECT id from users
-where name=$1;
+SELECT name from users
+where id=$1;
 
 -- name: GetUserName :one
 SELECT * from users

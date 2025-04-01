@@ -31,10 +31,10 @@ func innit() commands {
 	comm.register("reset", handleReset)
 	comm.register("users", handleUsers)
 	comm.register("agg", handleAgg)
-	comm.register("addfeed", handleAddFeed)
+	comm.register("addfeed", middlewareLoggedIn(handleAddFeed))
 	comm.register("feeds", handleFeeds)
-	comm.register("following", handleFollowing)
-	comm.register("follow", handleFollow)
+	comm.register("following", middlewareLoggedIn(handleFollowing))
+	comm.register("follow", middlewareLoggedIn(handleFollow))
 	return comm
 }
 
