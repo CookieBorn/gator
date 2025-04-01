@@ -40,8 +40,6 @@ func main() {
 	}
 }
 
-var stat state
-
 func handleLogin(s *state, cmd command) error {
 	if len(cmd.arguments) != 1 {
 		err := fmt.Errorf("Login expecting one argument")
@@ -219,12 +217,18 @@ func handleFollowing(s *state, cmd command, user database.User) error {
 	return nil
 }
 
-func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
-	return func(s *state, cmd command) error {
-		user, err := s.db.GetUser(context.Background(), s.configStruct.Username)
-		if err != nil {
-			return err
-		}
-		return handler(s, cmd, user)
+func handleUnfollow(s *state, cmd command, user database.User) error {
+	feed, err := s.db.GetFeedName(context.Background(), cmd.arguments[0])
+	if err != nil {
+		return err
 	}
+	unfollowParam := database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	}
+	err = s.db.DeleteFeedFollow(context.Background(), unfollowParam)
+	if err != nil {
+		return err
+	}
+	return nil
 }

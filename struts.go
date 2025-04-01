@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/CookieBorn/gator/internal/config"
@@ -35,7 +36,18 @@ func innit() commands {
 	comm.register("feeds", handleFeeds)
 	comm.register("following", middlewareLoggedIn(handleFollowing))
 	comm.register("follow", middlewareLoggedIn(handleFollow))
+	comm.register("unfollow", middlewareLoggedIn(handleUnfollow))
 	return comm
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		user, err := s.db.GetUser(context.Background(), s.configStruct.Username)
+		if err != nil {
+			return err
+		}
+		return handler(s, cmd, user)
+	}
 }
 
 func (c *commands) register(name string, f func(*state, command) error) {
