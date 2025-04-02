@@ -99,12 +99,21 @@ func handleUsers(s *state, cmd command) error {
 }
 
 func handleAgg(s *state, cmd command) error {
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if len(cmd.arguments) < 1 {
+		return fmt.Errorf("Missing time")
+	}
+	timeBetweenRequests, err := time.ParseDuration(cmd.arguments[0])
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", feed)
-	return nil
+	fmt.Printf("Collecting feeds every %v\n", timeBetweenRequests)
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		err = scrapeFetch(s)
+		if err != nil {
+			return err
+		}
+	}
 }
 
 func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
@@ -185,6 +194,9 @@ func handleFeeds(s *state, cmd command) error {
 }
 
 func handleFollow(s *state, cmd command, user database.User) error {
+	if len(cmd.arguments) < 1 {
+		return fmt.Errorf("Missing url\n")
+	}
 	feed, err := s.db.GetFeedName(context.Background(), cmd.arguments[0])
 	if err != nil {
 		return err
@@ -218,6 +230,9 @@ func handleFollowing(s *state, cmd command, user database.User) error {
 }
 
 func handleUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.arguments) < 1 {
+		return fmt.Errorf("Missing url\n")
+	}
 	feed, err := s.db.GetFeedName(context.Background(), cmd.arguments[0])
 	if err != nil {
 		return err
@@ -229,6 +244,31 @@ func handleUnfollow(s *state, cmd command, user database.User) error {
 	err = s.db.DeleteFeedFollow(context.Background(), unfollowParam)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func scrapeFetch(s *state) error {
+	feed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return err
+	}
+	markedFetchFeedParam := database.MarkedFetchFeedParams{
+		UpdatedAt: time.Now(),
+		ID:        feed.ID,
+	}
+	err = s.db.MarkedFetchFeed(context.Background(), markedFetchFeedParam)
+	if err != nil {
+		fmt.Print("FetchFeedError\n")
+		return err
+	}
+	RSSfeed, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s\n", RSSfeed.Channel.Title)
+	for _, item := range RSSfeed.Channel.Item {
+		fmt.Printf("-%s\n", item.Title)
 	}
 	return nil
 }

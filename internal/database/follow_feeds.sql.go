@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -87,7 +88,7 @@ func (q *Queries) DeleteFeedFollow(ctx context.Context, arg DeleteFeedFollowPara
 
 const getFollowFeeds = `-- name: GetFollowFeeds :many
 SELECT
-    feed_follows.id, feed_follows.created_at, feed_follows.updated_at, feed_id, feed_follows.user_id, users.id, users.created_at, users.updated_at, users.name, feeds.id, feeds.created_at, feeds.updated_at, feeds.name, url, feeds.user_id,
+    feed_follows.id, feed_follows.created_at, feed_follows.updated_at, feed_id, feed_follows.user_id, users.id, users.created_at, users.updated_at, users.name, feeds.id, feeds.created_at, feeds.updated_at, feeds.name, url, feeds.user_id, last_fetched_at,
     feeds.name AS feed_name,
     users.name AS user_name
 FROM feed_follows
@@ -99,23 +100,24 @@ WHERE feed_follows.user_id=$1
 `
 
 type GetFollowFeedsRow struct {
-	ID          int32
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	FeedID      int32
-	UserID      int32
-	ID_2        int32
-	CreatedAt_2 time.Time
-	UpdatedAt_2 time.Time
-	Name        string
-	ID_3        int32
-	CreatedAt_3 time.Time
-	UpdatedAt_3 time.Time
-	Name_2      string
-	Url         string
-	UserID_2    int32
-	FeedName    string
-	UserName    string
+	ID            int32
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	FeedID        int32
+	UserID        int32
+	ID_2          int32
+	CreatedAt_2   time.Time
+	UpdatedAt_2   time.Time
+	Name          string
+	ID_3          int32
+	CreatedAt_3   time.Time
+	UpdatedAt_3   time.Time
+	Name_2        string
+	Url           string
+	UserID_2      int32
+	LastFetchedAt sql.NullTime
+	FeedName      string
+	UserName      string
 }
 
 func (q *Queries) GetFollowFeeds(ctx context.Context, userID int32) ([]GetFollowFeedsRow, error) {
@@ -143,6 +145,7 @@ func (q *Queries) GetFollowFeeds(ctx context.Context, userID int32) ([]GetFollow
 			&i.Name_2,
 			&i.Url,
 			&i.UserID_2,
+			&i.LastFetchedAt,
 			&i.FeedName,
 			&i.UserName,
 		); err != nil {
