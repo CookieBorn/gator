@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -268,7 +269,61 @@ func scrapeFetch(s *state) error {
 	}
 	fmt.Printf("%s\n", RSSfeed.Channel.Title)
 	for _, item := range RSSfeed.Channel.Item {
-		fmt.Printf("-%s\n", item.Title)
+		pubTime, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err != nil {
+			return err
+		}
+		desc := false
+		if item.Description != "" {
+			desc = true
+		}
+		descpt := sql.NullString{
+			String: item.Description,
+			Valid:  desc,
+		}
+		pubT := sql.NullTime{
+			Time:  pubTime,
+			Valid: pubTime.IsZero(),
+		}
+		Post := database.CreatePostParams{
+			ID:          int32(uuid.New().ID()),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: descpt,
+			PublishedAt: pubT,
+			FeedID:      feed.ID,
+		}
+		_, err = s.db.CreatePost(context.Background(), Post)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func handleBrowse(s *state, cmd command) error {
+	lim := int32(0)
+	if len(cmd.arguments) < 1 {
+		lim = int32(2)
+	} else {
+		lim2, err := strconv.Atoi(cmd.arguments[0])
+		if err != nil {
+			return err
+		}
+		lim = int32(lim2)
+	}
+	posts, err := s.db.GetPostsUser(context.Background(), lim)
+	if err != nil {
+		return err
+	}
+	for _, post := range posts {
+		fmt.Printf("%s\n", post.Title)
+		if post.Description.Valid {
+			fmt.Printf("%s\n", post.Description.String)
+		}
+		fmt.Printf("-%s\n", post.Url)
 	}
 	return nil
 }

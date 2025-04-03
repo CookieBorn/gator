@@ -37,6 +37,7 @@ func innit() commands {
 	comm.register("following", middlewareLoggedIn(handleFollowing))
 	comm.register("follow", middlewareLoggedIn(handleFollow))
 	comm.register("unfollow", middlewareLoggedIn(handleUnfollow))
+	comm.register("browse", handleBrowse)
 	return comm
 }
 
