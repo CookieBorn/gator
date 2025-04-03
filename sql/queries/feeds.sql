@@ -19,7 +19,7 @@ Where url=$1;
 
 -- name: MarkedFetchFeed :exec
 UPDATE feeds
-set updated_at=$1 and last_fetched_at=$1
+set updated_at=$1, last_fetched_at=$1
 Where id=$2;
 
 -- name: GetNextFeedToFetch :one
