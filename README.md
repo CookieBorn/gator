@@ -12,25 +12,25 @@ The config file will need to include one json object of the form:
 {"db_url":"example.postgres.url/gator","current_user_name":}
 
 # Usage:
-- login <username>
+- login {username}\
 Login as existing user
-- register <username>
+- register {username}\
 Create new user
-- reset
+- reset\
 Remove all data from database
-- addfeed <name> <url>
+- addfeed {name} {url}\
 Add url to users feed
-- agg <time between fetch>
+- agg {time between fetch}\
 Fetch posts from feed urls
-- browse <limit>
+- browse {limit}\
 See title and urls of posts
-- users
+- users\
 List users
-- feeds
+- feeds\
 List feeds
-- following
+- following\
 List feeds followed by the current user
-- follow <url>
+- follow {url}\
 Add a feed to current users following List
-- unfollow <url>
+- unfollow {url}\
 Remove a feed to current users following List
